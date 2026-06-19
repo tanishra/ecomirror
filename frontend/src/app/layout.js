@@ -19,7 +19,7 @@ export const metadata = {
     title: "EcoMirror — AI Carbon Footprint Platform",
     description: "A conversational AI carbon footprint explorer. Discover your impact in a live 3D biosphere.",
     type: "website",
-    url: "https://ecomirror.vercel.app",
+    url: "https://ecomirror-virid.vercel.app",
   },
   icons: {
     icon: [

@@ -1,6 +1,6 @@
 export function buildShareText({ score, totalCo2Kg, firstNudgeAction, breakdown }) {
   const tonsCo2 = (totalCo2Kg / 1000).toFixed(2);
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ecomirror.vercel.app';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ecomirror-virid.vercel.app';
 
   const rating = score <= 33
     ? 'Low Impact (Eco-Balanced)'

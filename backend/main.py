@@ -1,6 +1,7 @@
 import json
 import logging
 import asyncio
+import os
 from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,15 +30,18 @@ app = FastAPI(title="EcoMirror AI Backend", version="1.0.0")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# CORS — allow local dev + production frontend origins
-ALLOWED_ORIGINS = [
+# CORS — allow local dev + production frontend origins (configurable via env)
+DEFAULT_ORIGINS = [
     "http://localhost:3000",
-    "http://localhost:3001",
     "http://127.0.0.1:3000",
-    "https://ecomirror.vercel.app",
-    "https://ecomirror.netlify.app",
-    "https://tanishrajput-ecomirror-backend.hf.space",
+    "https://ecomirror-virid.vercel.app",
+
 ]
+_env_origins = os.environ.get("CORS_ORIGINS", "")
+if _env_origins:
+    ALLOWED_ORIGINS = [o.strip() for o in _env_origins.split(",") if o.strip()]
+else:
+    ALLOWED_ORIGINS = DEFAULT_ORIGINS
 
 app.add_middleware(
     CORSMiddleware,
