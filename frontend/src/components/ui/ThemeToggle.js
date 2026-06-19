@@ -7,8 +7,7 @@ export default function ThemeToggle() {
 
   useEffect(() => {
     const saved = localStorage.getItem('ecomirror_theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark = saved ? saved === 'dark' : prefersDark;
+    const isDark = saved === 'dark';
     setDark(isDark);
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
   }, []);

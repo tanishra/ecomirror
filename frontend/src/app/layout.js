@@ -32,7 +32,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" data-theme="light" className={inter.variable}>
       <body className={`antialiased min-h-screen ${inter.className}`} style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
         {/* Skip to main content — accessibility */}
         <a
