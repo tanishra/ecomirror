@@ -4,8 +4,7 @@ emoji: 🌍
 colorFrom: green
 colorTo: blue
 sdk: docker
-sdk_version: "3.12"
-app_file: Dockerfile
+app_port: 7860
 pinned: false
 ---
 
