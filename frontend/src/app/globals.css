@@ -1,0 +1,189 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   ECOMIRROR V2 — Google Material Design 3 Light Theme
+   ============================================================ */
+
+:root {
+  /* Core palette */
+  --background: #f8faf9;
+  --surface: #ffffff;
+  --surface-variant: #f1f3f4;
+  --foreground: #202124;
+  --foreground-muted: #5f6368;
+  --foreground-subtle: #9aa0a6;
+
+  /* Brand colors (Google Green + Blue) */
+  --green-primary: #1e8e3e;
+  --green-light: #34a853;
+  --green-surface: #e6f4ea;
+  --green-border: #ceead6;
+  --blue-primary: #1a73e8;
+  --blue-surface: #e8f0fe;
+  --red-primary: #d93025;
+  --red-surface: #fce8e6;
+  --amber-primary: #f29900;
+  --amber-surface: #fef7e0;
+
+  /* Elevation shadows (Material Design 3) */
+  --shadow-1: 0 1px 2px 0 rgba(60,64,67,0.30), 0 1px 3px 1px rgba(60,64,67,0.15);
+  --shadow-2: 0 1px 2px 0 rgba(60,64,67,0.30), 0 2px 6px 2px rgba(60,64,67,0.15);
+  --shadow-3: 0 4px 8px 3px rgba(60,64,67,0.15), 0 1px 3px rgba(60,64,67,0.30);
+  --shadow-4: 0 6px 10px 4px rgba(60,64,67,0.15), 0 2px 3px rgba(60,64,67,0.30);
+
+  /* Nav & border helpers */
+  --nav-bg: rgba(255, 255, 255, 0.92);
+  --border-subtle: #e8eaed;
+
+  /* Legacy glass (used only in dark pages like biosphere) */
+  --card-bg: rgba(15, 23, 42, 0.55);
+  --card-border: rgba(255, 255, 255, 0.10);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* ── Dark Mode Variables ── */
+[data-theme="dark"] {
+  --background: #0f172a;
+  --surface: #1e293b;
+  --surface-variant: #334155;
+  --foreground: #f1f5f9;
+  --foreground-muted: #94a3b8;
+  --foreground-subtle: #64748b;
+  --border-subtle: #334155;
+  --green-surface: rgba(30, 142, 62, 0.15);
+  --green-border: rgba(52, 168, 83, 0.3);
+  --blue-surface: rgba(26, 115, 232, 0.15);
+  --red-surface: rgba(217, 48, 37, 0.15);
+  --amber-surface: rgba(242, 153, 0, 0.15);
+  --shadow-1: 0 1px 2px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-2: 0 1px 2px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3);
+  --shadow-3: 0 4px 8px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.5);
+  --nav-bg: rgba(15, 23, 42, 0.92);
+  --border-subtle: #334155;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', 'Google Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Custom Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--surface-variant); }
+::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--green-light); }
+
+/* ── Material Card ── */
+.md-card {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle, #e8eaed);
+  border-radius: 16px;
+  box-shadow: var(--shadow-1);
+  transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.md-card:hover {
+  box-shadow: var(--shadow-3);
+}
+.md-chip {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle, #e8eaed);
+  color: var(--foreground-muted);
+}
+
+/* ── Material Chip ── */
+.md-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border: 1px solid var(--border-subtle, #e8eaed);
+  background: var(--surface);
+  color: var(--foreground-muted);
+}
+
+/* ── Glass panel — only for dark pages (biosphere) ── */
+.glass-panel {
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--glass-shadow);
+}
+.glass-panel-hover {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-panel-hover:hover {
+  background: rgba(15, 23, 42, 0.70);
+  border-color: rgba(52, 168, 83, 0.35);
+  box-shadow: 0 10px 40px 0 rgba(52, 168, 83, 0.15);
+  transform: translateY(-2px);
+}
+
+/* ── Animations ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float { animation: float 5s ease-in-out infinite; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up { animation: fadeInUp 0.5s cubic-bezier(0.4,0,0.2,1) both; }
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #f1f3f4 25%, #e8eaed 50%, #f1f3f4 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 8px;
+}
+
+/* ── Google-style CTA button ── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 28px;
+  border-radius: 100px;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  background: var(--green-primary);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+  box-shadow: var(--shadow-1);
+}
+.btn-primary:hover {
+  background: #1a7a36;
+  box-shadow: var(--shadow-3);
+  transform: translateY(-1px);
+}
+.btn-primary:active { transform: scale(0.97); }
+
+/* ── Accent divider line on stat cards ── */
+.stat-accent-bar {
+  height: 3px;
+  border-radius: 2px;
+  margin-top: 16px;
+  width: 40px;
+  transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+.md-card:hover .stat-accent-bar { width: 100%; }

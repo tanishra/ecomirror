@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+google-genai
+openai
+python-dotenv
+sse-starlette
+pydantic
+slowapi
+pytest
+pytest-asyncio
