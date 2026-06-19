@@ -88,6 +88,7 @@ Open [http://localhost:3000](http://localhost:3000)
 |----------|-------|----------|-------------|
 | `GEMINI_API_KEY` | `backend/.env` | Yes | Google Gemini 2.5 Flash API key |
 | `OPENAI_API_KEY` | `backend/.env` | No | Fallback LLM (GPT-4o-mini) |
+| `CORS_ORIGINS` | `backend/.env` | No | Comma-separated allowed CORS origins |
 | `NEXT_PUBLIC_BACKEND_URL` | `frontend/.env.local` | Yes | Backend URL (default: `http://localhost:8000`) |
 | `NEXT_PUBLIC_APP_URL` | `frontend/.env.local` | No | Frontend URL for share links |
 
