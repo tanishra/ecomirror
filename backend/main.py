@@ -47,8 +47,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type", "Accept"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Pydantic Schemas
@@ -147,7 +147,12 @@ async def chat(request: Request, body: ChatRequest):
             if outgoing_step == 5:
                 clean_text, extracted_data = extract_data_block(full_response_text)
                 if extracted_data:
-                    yield {"event": "data", "data": json.dumps(extracted_data)}
+                    try:
+                        validated = CarbonInput(**extracted_data)
+                        yield {"event": "data", "data": json.dumps(extracted_data)}
+                    except Exception as ve:
+                        logger.warning(f"Extracted data failed validation: {ve}")
+                        yield {"event": "data", "data": json.dumps(extracted_data)}
                 else:
                     logger.info("Step 5 active but no data block returned yet (likely clarifying).")
         except Exception as e:
