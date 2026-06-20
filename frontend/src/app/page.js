@@ -41,7 +41,7 @@ export default function Home() {
 
             {/* GitHub Icon */}
             <a
-              href="https://github.com/tanishrajput/ecomirror"
+              href="https://github.com/tanishra/ecomirror"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="View EcoMirror source on GitHub"
