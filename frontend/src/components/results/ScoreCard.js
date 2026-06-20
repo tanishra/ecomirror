@@ -1,25 +1,32 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import gsap from 'gsap';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 
 export default function ScoreCard({ score, totalCo2Kg }) {
   const [displayScore, setDisplayScore] = useState(0);
+  const rafRef = useRef(null);
 
   useEffect(() => {
-    const obj = { val: 0 };
-    gsap.to(obj, {
-      val: score,
-      duration: 1.5,
-      ease: 'power2.out',
-      onUpdate: () => {
-        setDisplayScore(Math.floor(obj.val));
+    let start = null;
+    const duration = 1500;
+    const from = 0;
+
+    const animate = (timestamp) => {
+      if (!start) start = timestamp;
+      const elapsed = timestamp - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayScore(Math.floor(from + (score - from) * eased));
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(animate);
       }
-    });
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [score]);
 
-  // Determine feedback details based on score
-  const getScoreDetails = (val) => {
+  const getScoreDetails = useCallback((val) => {
     if (val <= 33) {
       return {
         label: 'Low Impact',
@@ -45,10 +52,10 @@ export default function ScoreCard({ score, totalCo2Kg }) {
         desc: 'Your emissions are heavy. Urgent behavioral adjustments are recommended.',
       };
     }
-  };
+  }, []);
 
-  const details = getScoreDetails(score);
-  const tonsCo2 = (totalCo2Kg / 1000).toFixed(2);
+  const details = useMemo(() => getScoreDetails(score), [score, getScoreDetails]);
+  const tonsCo2 = useMemo(() => (totalCo2Kg / 1000).toFixed(2), [totalCo2Kg]);
 
   const circumference = 2 * Math.PI * 52;
   const strokeDashoffset = circumference - (displayScore / 100) * circumference;

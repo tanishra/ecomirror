@@ -1,7 +1,8 @@
 'use client';
 
-export default function NudgeCard({ nudges }) {
-  // Maps action content to category icons
+import React from 'react';
+
+const NudgeCard = React.memo(function NudgeCard({ nudges }) {
   const getNudgeIcon = (action) => {
     const lower = action.toLowerCase();
     if (lower.includes('transit') || lower.includes('carpool') || lower.includes('metro') || lower.includes('bus') || lower.includes('commute')) return '🚌';
@@ -69,4 +70,6 @@ export default function NudgeCard({ nudges }) {
       </div>
     </div>
   );
-}
+});
+
+export default NudgeCard;

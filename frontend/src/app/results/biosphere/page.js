@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { captureAndShare } from '@/lib/screenshot';
 import { buildShareText } from '@/lib/shareText';
+import BiosphereAudio from '@/lib/BiosphereAudio';
 
 // Dynamic import of Three.js EcoWorld scene to bypass Next SSR errors
 const EcoWorld = dynamic(() => import('@/components/three/EcoWorld'), {
@@ -21,322 +21,6 @@ const EcoWorld = dynamic(() => import('@/components/three/EcoWorld'), {
     </div>
   ),
 });
-
-// Procedural Web Audio API Soundscape Synthesizer
-class BiosphereAudio {
-  constructor() {
-    this.ctx = null;
-    this.noiseNode = null;
-    this.windFilter = null;
-    this.windGain = null;
-    this.factoryOsc = null;
-    this.factoryFilter = null;
-    this.factoryGain = null;
-    this.birdTimer = null;
-    this.alarmTimer = null;
-    this.pianoTimer = null;
-    this.cricketTimer = null;
-    this.waterGain = null;
-    this.masterGain = null;
-    this.isPlaying = false;
-    // Pentatonic notes (Hz): C4 E4 G4 A4 C5
-    this.pianoNotes = [261.63, 329.63, 392.0, 440.0, 523.25];
-    this.pianoNoteIndex = 0;
-  }
-
-  init() {
-    try {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      this.ctx = new AudioContextClass();
-      
-      // 1. Create a white noise node for wind sounds
-      const bufferSize = 2 * this.ctx.sampleRate;
-      const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-      const output = noiseBuffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        output[i] = Math.random() * 2 - 1;
-      }
-      
-      this.noiseNode = this.ctx.createBufferSource();
-      this.noiseNode.buffer = noiseBuffer;
-      this.noiseNode.loop = true;
-      
-      this.windFilter = this.ctx.createBiquadFilter();
-      this.windFilter.type = 'lowpass';
-      this.windFilter.frequency.value = 450;
-      this.windFilter.Q.value = 3.5;
-
-      this.windGain = this.ctx.createGain();
-      this.windGain.gain.value = 0.0; // Muted by default
-
-      this.noiseNode.connect(this.windFilter);
-      this.windFilter.connect(this.windGain);
-      this.windGain.connect(this.ctx.destination);
-      this.noiseNode.start(0);
-
-      // 2. Create factory low-frequency industrial drone
-      this.factoryOsc = this.ctx.createOscillator();
-      this.factoryOsc.type = 'sawtooth';
-      this.factoryOsc.frequency.value = 55; // Low A Hum
-
-      this.factoryFilter = this.ctx.createBiquadFilter();
-      this.factoryFilter.type = 'lowpass';
-      this.factoryFilter.frequency.value = 110;
-
-      this.factoryGain = this.ctx.createGain();
-      this.factoryGain.gain.value = 0.0;
-
-      this.factoryOsc.connect(this.factoryFilter);
-      this.factoryFilter.connect(this.factoryGain);
-      this.factoryGain.connect(this.ctx.destination);
-      this.factoryOsc.start(0);
-
-      // 3. Master gain for global muting
-      this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.value = 1.0;
-      this.masterGain.connect(this.ctx.destination);
-
-      // Re-route existing to masterGain
-      this.windGain.disconnect();
-      this.windGain.connect(this.masterGain);
-      this.factoryGain.disconnect();
-      this.factoryGain.connect(this.masterGain);
-
-      // 4. Water stream — brown noise (low-pass at 220Hz)
-      const waterBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-      const waterData = waterBuffer.getChannelData(0);
-      let lastOut = 0;
-      for (let i = 0; i < bufferSize; i++) {
-        const white = Math.random() * 2 - 1;
-        waterData[i] = (lastOut + 0.02 * white) / 1.02;
-        lastOut = waterData[i];
-      }
-      this.waterNode = this.ctx.createBufferSource();
-      this.waterNode.buffer = waterBuffer;
-      this.waterNode.loop = true;
-      this.waterFilter = this.ctx.createBiquadFilter();
-      this.waterFilter.type = 'lowpass';
-      this.waterFilter.frequency.value = 220;
-      this.waterGain = this.ctx.createGain();
-      this.waterGain.gain.value = 0.0;
-      this.waterNode.connect(this.waterFilter);
-      this.waterFilter.connect(this.waterGain);
-      this.waterGain.connect(this.masterGain);
-      this.waterNode.start(0);
-
-      this.isPlaying = true;
-    } catch (e) {
-      console.error('Failed to initialize Web Audio API Synth:', e);
-    }
-  }
-
-  update(score, isMuted) {
-    if (!this.isPlaying || !this.ctx) return;
-    
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
-    }
-
-    if (isMuted) {
-      this.masterGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.3);
-      this.stopBirdScheduler();
-      this.stopWarningBleeps();
-      this.stopPianoArpeggio();
-      this.stopCrickets();
-      return;
-    }
-    this.masterGain.gain.setTargetAtTime(1.0, this.ctx.currentTime, 0.3);
-
-    // Set volumes & sound frequencies dynamically based on carbon score
-    if (score <= 33) {
-      // Gentle wind + birds + piano arpeggios + water stream
-      this.windGain.gain.setTargetAtTime(0.06, this.ctx.currentTime, 0.4);
-      this.windFilter.frequency.setTargetAtTime(650, this.ctx.currentTime, 0.8);
-      this.factoryGain.gain.setTargetAtTime(0.0, this.ctx.currentTime, 0.4);
-      if (this.waterGain) this.waterGain.gain.setTargetAtTime(0.04, this.ctx.currentTime, 0.8);
-      this.startBirdScheduler(2000, 4500);
-      this.startPianoArpeggio(2800, 4500);
-      this.stopWarningBleeps();
-      this.stopCrickets();
-    } else if (score <= 66) {
-      // Hazy wind + occasional bird + faint factory
-      this.windGain.gain.setTargetAtTime(0.10, this.ctx.currentTime, 0.4);
-      this.windFilter.frequency.setTargetAtTime(450, this.ctx.currentTime, 0.8);
-      this.factoryGain.gain.setTargetAtTime(0.03, this.ctx.currentTime, 0.4);
-      if (this.waterGain) this.waterGain.gain.setTargetAtTime(0.01, this.ctx.currentTime, 0.8);
-      this.startBirdScheduler(5500, 9000);
-      this.startPianoArpeggio(6000, 9000);
-      this.stopWarningBleeps();
-      this.stopCrickets();
-    } else {
-      // Industrial storm + factory drone + cricket eerie ambience + warning bleeps
-      this.windGain.gain.setTargetAtTime(0.18, this.ctx.currentTime, 0.4);
-      this.windFilter.frequency.setTargetAtTime(280, this.ctx.currentTime, 0.8);
-      this.factoryGain.gain.setTargetAtTime(0.12, this.ctx.currentTime, 0.4);
-      if (this.waterGain) this.waterGain.gain.setTargetAtTime(0.0, this.ctx.currentTime, 0.4);
-      this.stopBirdScheduler();
-      this.stopPianoArpeggio();
-      this.startWarningBleeps();
-      this.startCrickets();
-    }
-  }
-
-  startBirdScheduler(minDelay, maxDelay) {
-    this.stopBirdScheduler();
-    
-    const scheduleNext = () => {
-      const delay = minDelay + Math.random() * (maxDelay - minDelay);
-      this.birdTimer = setTimeout(() => {
-        this.playBirdChirp();
-        scheduleNext();
-      }, delay);
-    };
-    
-    scheduleNext();
-  }
-
-  stopBirdScheduler() {
-    if (this.birdTimer) {
-      clearTimeout(this.birdTimer);
-      this.birdTimer = null;
-    }
-  }
-
-  playBirdChirp() {
-    if (!this.isPlaying || !this.ctx || this.ctx.state === 'suspended') return;
-    try {
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(800 + Math.random() * 400, this.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(1900 + Math.random() * 500, this.ctx.currentTime + 0.14);
-      
-      gain.gain.setValueAtTime(0.012, this.ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.0, this.ctx.currentTime + 0.14);
-      
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start();
-      osc.stop(this.ctx.currentTime + 0.15);
-    } catch (e) {}
-  }
-
-  startWarningBleeps() {
-    if (this.alarmTimer) return;
-    
-    const bleep = () => {
-      if (!this.isPlaying || !this.ctx || this.ctx.state === 'suspended') return;
-      try {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(980, this.ctx.currentTime); // High pitch bleep
-        
-        gain.gain.setValueAtTime(0.015, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.25);
-        
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.3);
-      } catch (e) {}
-    };
-    
-    this.alarmTimer = setInterval(bleep, 2500);
-  }
-
-  stopWarningBleeps() {
-    if (this.alarmTimer) {
-      clearInterval(this.alarmTimer);
-      this.alarmTimer = null;
-    }
-  }
-
-  startPianoArpeggio(minDelay, maxDelay) {
-    this.stopPianoArpeggio();
-    const scheduleNext = () => {
-      const delay = minDelay + Math.random() * (maxDelay - minDelay);
-      this.pianoTimer = setTimeout(() => {
-        this.playPianoNote();
-        scheduleNext();
-      }, delay);
-    };
-    scheduleNext();
-  }
-
-  stopPianoArpeggio() {
-    if (this.pianoTimer) {
-      clearTimeout(this.pianoTimer);
-      this.pianoTimer = null;
-    }
-  }
-
-  playPianoNote() {
-    if (!this.isPlaying || !this.ctx || this.ctx.state === 'suspended') return;
-    try {
-      const freq = this.pianoNotes[this.pianoNoteIndex % this.pianoNotes.length];
-      this.pianoNoteIndex = (this.pianoNoteIndex + 1) % this.pianoNotes.length;
-      const osc = this.ctx.createOscillator();
-      const gainNode = this.ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-      gainNode.gain.setValueAtTime(0.0, this.ctx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.016, this.ctx.currentTime + 0.02);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.8);
-      osc.connect(gainNode);
-      gainNode.connect(this.masterGain);
-      osc.start(this.ctx.currentTime);
-      osc.stop(this.ctx.currentTime + 1.8);
-    } catch (e) {}
-  }
-
-  startCrickets() {
-    if (this.cricketTimer) return;
-    const chirp = () => {
-      if (!this.isPlaying || !this.ctx || this.ctx.state === 'suspended') return;
-      try {
-        const osc = this.ctx.createOscillator();
-        const g = this.ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(3200 + Math.random() * 800, this.ctx.currentTime);
-        g.gain.setValueAtTime(0.008, this.ctx.currentTime);
-        g.gain.linearRampToValueAtTime(0.0, this.ctx.currentTime + 0.05);
-        osc.connect(g);
-        g.connect(this.masterGain);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.055);
-      } catch (e) {}
-    };
-    const loop = () => {
-      chirp();
-      this.cricketTimer = setTimeout(loop, 800 + Math.random() * 700);
-    };
-    loop();
-  }
-
-  stopCrickets() {
-    if (this.cricketTimer) {
-      clearTimeout(this.cricketTimer);
-      this.cricketTimer = null;
-    }
-  }
-
-  close() {
-    try {
-      this.stopBirdScheduler();
-      this.stopWarningBleeps();
-      this.stopPianoArpeggio();
-      this.stopCrickets();
-      if (this.noiseNode) this.noiseNode.disconnect();
-      if (this.waterNode) this.waterNode.disconnect();
-      if (this.factoryOsc) this.factoryOsc.disconnect();
-      if (this.ctx) this.ctx.close();
-    } catch (e) {}
-  }
-}
 
 export default function BiospherePage() {
   const router = useRouter();
@@ -456,7 +140,6 @@ export default function BiospherePage() {
       try {
         const parsed = JSON.parse(saved);
         const calc = parsed.calculation || {};
-        const lifestyle = parsed.lifestyle || {};
         const nudges = parsed.context?.nudges || [];
         shareText = buildShareText({
           score: calc.score ?? actualScore,
@@ -469,20 +152,37 @@ export default function BiospherePage() {
       }
     }
 
-    const result = await captureAndShare(actualScore, shareText);
+    const linkedinUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(shareText)}`;
+    window.open(linkedinUrl, '_blank', 'noopener,noreferrer');
 
-    if (!result.success) {
+    try {
+      const canvas = document.querySelector('canvas');
+      if (canvas) {
+        const dataUrl = canvas.toDataURL('image/png');
+
+        const link = document.createElement('a');
+        link.download = `ecomirror_biosphere_score_${actualScore}.png`;
+        link.href = dataUrl;
+        link.click();
+
+        try {
+          const blob = await (await fetch(dataUrl)).blob();
+          if (navigator.clipboard && navigator.clipboard.write) {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          }
+        } catch (e) {
+          console.error('Clipboard copy failed:', e);
+        }
+      }
+
+      setShareStatus('shared');
+      setSnapToast('Image downloaded! Paste it into your LinkedIn post.');
+    } catch (e) {
+      console.error('Screenshot share failed:', e);
       setShareStatus('error');
-      setSnapToast('Could not capture screenshot. Please try again.');
-      setTimeout(() => { setShareStatus(null); setSnapToast(null); }, 3500);
-      return;
+      setSnapToast('Could not capture screenshot. LinkedIn is open — you can still post without the image.');
     }
-
-    setShareStatus(result.clipboardOk ? 'copied' : 'downloaded');
-    setSnapToast(result.clipboardOk
-      ? 'Image copied to clipboard! Opening LinkedIn — paste (Ctrl+V) the image into your post.'
-      : 'Image downloaded! Opening LinkedIn — please attach it to your post.');
-    setTimeout(() => { setShareStatus(null); setSnapToast(null); }, 6000);
+    setTimeout(() => { setShareStatus(null); setSnapToast(null); }, 5000);
   };
 
   if (!mounted || actualScore === null || simulatedScore === null) {
@@ -670,7 +370,7 @@ export default function BiospherePage() {
               <svg className="w-4 h-4 fill-current flex-shrink-0" viewBox="0 0 24 24">
                 <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/>
               </svg>
-              {shareStatus === 'capturing' ? 'Capturing & Sharing...' : shareStatus === 'copied' ? 'Copied! Opening LinkedIn...' : shareStatus === 'downloaded' ? 'Downloaded! Opening LinkedIn...' : 'Share to LinkedIn with 3D Snap'}
+              {shareStatus === 'capturing' ? 'Capturing & Sharing...' : shareStatus === 'shared' ? 'Shared! Check LinkedIn' : shareStatus === 'error' ? 'Error — Try Again' : 'Share to LinkedIn with 3D Snap'}
             </button>
           </div>
 

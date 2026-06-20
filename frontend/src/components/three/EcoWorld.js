@@ -3,12 +3,12 @@
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Sky, PerformanceMonitor } from '@react-three/drei';
 import React, { useRef, useMemo, useEffect, useState } from 'react';
-import * as THREE from 'three';
+import { Color, MathUtils, FogExp2, Object3D, Vector3, DoubleSide, SRGBColorSpace, ACESFilmicToneMapping, CatmullRomCurve3 } from 'three';
 import gsap from 'gsap';
 
 // Helper to convert hex to RGB values for GSAP to animate directly
 function hexToRgb(hex) {
-  const color = new THREE.Color(hex);
+  const color = new Color(hex);
   return { r: color.r, g: color.g, b: color.b };
 }
 
@@ -487,7 +487,7 @@ const FlatGround = React.memo(function FlatGround({ groundColor }) {
 
   return (
     <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} receiveShadow userData={{ isGround: true }}>
-      <planeGeometry ref={geomRef} args={[120, 120, 80, 80]} />
+      <planeGeometry ref={geomRef} args={[120, 120, 40, 40]} />
       <meshStandardMaterial roughness={0.9} color="#10b981" />
     </mesh>
   );
@@ -496,13 +496,13 @@ const FlatGround = React.memo(function FlatGround({ groundColor }) {
 // 8b. Gravel path from village to lake
 const GravelPath = React.memo(function GravelPath() {
   const points = useMemo(() => [
-    new THREE.Vector3(8, -1.95, 4),
-    new THREE.Vector3(5, -1.95, 3),
-    new THREE.Vector3(3, -1.95, 1.5),
-    new THREE.Vector3(0, -1.95, 0),
+    new Vector3(8, -1.95, 4),
+    new Vector3(5, -1.95, 3),
+    new Vector3(3, -1.95, 1.5),
+    new Vector3(0, -1.95, 0),
   ], []);
 
-  const curve = useMemo(() => new THREE.CatmullRomCurve3(points), [points]);
+  const curve = useMemo(() => new CatmullRomCurve3(points), [points]);
 
   return (
     <mesh receiveShadow>
@@ -984,11 +984,11 @@ function Butterfly({ offset }) {
     <group ref={groupRef}>
       <mesh ref={lWingRef} position={[-0.08, 0, 0]} castShadow>
         <coneGeometry args={[0.12, 0.08, 3]} />
-        <meshStandardMaterial color={color} roughness={0.4} transparent opacity={0.85} side={THREE.DoubleSide} />
+        <meshStandardMaterial color={color} roughness={0.4} transparent opacity={0.85} side={DoubleSide} />
       </mesh>
       <mesh ref={rWingRef} position={[0.08, 0, 0]} castShadow>
         <coneGeometry args={[0.12, 0.08, 3]} />
-        <meshStandardMaterial color={color} roughness={0.4} transparent opacity={0.85} side={THREE.DoubleSide} />
+        <meshStandardMaterial color={color} roughness={0.4} transparent opacity={0.85} side={DoubleSide} />
       </mesh>
     </group>
   );
@@ -1180,7 +1180,7 @@ function Foliage({ score }) {
 function GrassField({ score }) {
   const meshRef = useRef();
   const count = 800;
-  const dummy = useMemo(() => new THREE.Object3D(), []);
+    const dummy = useMemo(() => new Object3D(), []);
 
   const grassPositions = useMemo(() => {
     const positions = [];
@@ -1314,17 +1314,17 @@ const Road = React.memo(function Road() {
 });
 
 // 13. Environment Controller — upgraded with Sky shader, hemisphere light, factory glow, GrassField
-function SceneController({ score }) {
+function SceneController({ score, degraded }) {
   const ambientLightRef = useRef();
   const dirLightRef = useRef();
   const hemiLightRef = useRef();
   const factoryLightRef = useRef();
 
   const currentColors = useRef({
-    hill: new THREE.Color('#10b981'),
-    leaves: new THREE.Color('#059669'),
-    clouds: new THREE.Color('#ffffff'),
-    fogColor: new THREE.Color('#b9d8f5'),
+    hill: new Color('#10b981'),
+    leaves: new Color('#059669'),
+    clouds: new Color('#ffffff'),
+    fogColor: new Color('#b9d8f5'),
     ambientIntensity: 0.55,
     hemiSkyIntensity: 0.6,
     fogDensity: 0.010,
@@ -1334,7 +1334,8 @@ function SceneController({ score }) {
   // Sky parameters animated with GSAP
   const skyParams = useRef({ turbidity: 2, rayleigh: 0.8, mieCoeff: 0.005, mieDir: 0.85, elevation: 28, azimuth: 180 });
   const skyRef = useRef();
-  const sunPosVec = useRef(new THREE.Vector3());
+  const sunPosVec = useRef(new Vector3());
+  const skyFrameCount = useRef(0);
 
   useEffect(() => {
     const c = currentColors.current;
@@ -1387,15 +1388,16 @@ function SceneController({ score }) {
       state.scene.fog.density = fogDensity;
     }
 
-    // Update sky shader uniforms every frame (GSAP animates skyParams values)
-    if (skyRef.current?.material?.uniforms) {
+    // Update sky shader uniforms every 3rd frame (GSAP animates skyParams values)
+    skyFrameCount.current++;
+    if (skyRef.current?.material?.uniforms && skyFrameCount.current % 3 === 0) {
       const u = skyRef.current.material.uniforms;
       u.turbidity.value = sp.turbidity;
       u.rayleigh.value = sp.rayleigh;
       u.mieCoefficient.value = sp.mieCoeff;
       u.mieDirectionalG.value = sp.mieDir;
-      const phi = THREE.MathUtils.degToRad(90 - sp.elevation);
-      const theta = THREE.MathUtils.degToRad(sp.azimuth);
+      const phi = MathUtils.degToRad(90 - sp.elevation);
+      const theta = MathUtils.degToRad(sp.azimuth);
       sunPosVec.current.setFromSphericalCoords(1, phi, theta);
       u.sunPosition.value.copy(sunPosVec.current);
     }
@@ -1447,8 +1449,8 @@ function SceneController({ score }) {
         ref={dirLightRef}
         position={[15, 28, 12]}
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={degraded ? 1024 : 2048}
+        shadow-mapSize-height={degraded ? 1024 : 2048}
         shadow-camera-far={80}
         shadow-camera-left={-30}
         shadow-camera-right={30}
@@ -1510,11 +1512,11 @@ export default function EcoWorld({ score }) {
   const [degraded, setDegraded] = useState(false);
 
   const handleCreated = ({ scene, gl }) => {
-    scene.fog = new THREE.FogExp2('#b9d8f5', 0.010);
+    scene.fog = new FogExp2('#b9d8f5', 0.010);
     // ACES Filmic tone mapping for richer colours
-    gl.toneMapping = THREE.ACESFilmicToneMapping;
+    gl.toneMapping = ACESFilmicToneMapping;
     gl.toneMappingExposure = 1.1;
-    gl.outputColorSpace = THREE.SRGBColorSpace;
+    gl.outputColorSpace = SRGBColorSpace;
   };
 
   return (
@@ -1534,7 +1536,7 @@ export default function EcoWorld({ score }) {
           threshold={0.6}
         />
 
-        <SceneController score={score} />
+        <SceneController score={score} degraded={degraded} />
 
         <OrbitControls
           enableZoom={true}

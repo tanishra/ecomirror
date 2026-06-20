@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import ChatInterface from '@/components/chat/ChatInterface';
-import ThemeToggle from '@/components/ui/ThemeToggle';
+import AppHeader from '@/components/ui/AppHeader';
 import { sendChatMessage, calculateFootprint, contextualizeFootprint, cancelChatStream } from '@/lib/api';
 import { getUserFriendlyError } from '@/lib/errorMessages';
 
@@ -22,7 +22,6 @@ export default function ChatPage() {
   const extractedDataRef = useRef(null);
   const initiatedRef = useRef(false);
 
-  // Keep references updated for async callbacks
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
@@ -31,22 +30,20 @@ export default function ChatPage() {
     stepRef.current = step;
   }, [step]);
 
-  // Initial trigger: Get Q1 on mount
   useEffect(() => {
     if (initiatedRef.current) return;
     initiatedRef.current = true;
 
-    // We send an initial prompt to greet the user and ask Q1
     const initiateChat = async () => {
       setIsLoading(true);
       setError(null);
-      
+
       const initialAssistantMessage = { role: 'assistant', content: '' };
       setMessages([initialAssistantMessage]);
 
       await sendChatMessage(
-        [], // Empty history
-        1,  // Step 1
+        [],
+        1,
         (chunk) => {
           setMessages((prev) => {
             if (prev.length === 0) return prev;
@@ -59,7 +56,7 @@ export default function ChatPage() {
             return next;
           });
         },
-        (s) => setStep(s), // onStep
+        (s) => setStep(s),
         (extractedData) => {
           extractedDataRef.current = extractedData;
         },
@@ -68,7 +65,7 @@ export default function ChatPage() {
           setIsLoading(false);
         }
       );
-      
+
       setIsLoading(false);
     };
 
@@ -80,13 +77,42 @@ export default function ChatPage() {
     };
   }, []);
 
-  const handleSendMessage = async (userText) => {
+  const processCarbonProfile = useCallback(async () => {
+    setIsCalculating(true);
+    setError(null);
+
+    try {
+      const extracted = extractedDataRef.current;
+      if (!extracted) {
+        throw new Error("We couldn't extract your carbon data from the conversation. Please try again.");
+      }
+
+      const calcResult = await calculateFootprint(extracted);
+      const contextResult = await contextualizeFootprint(calcResult, extracted);
+
+      const finalResultPackage = {
+        input: extracted,
+        calculation: calcResult,
+        context: contextResult,
+        timestamp: Date.now()
+      };
+
+      localStorage.setItem('ecomirror_results', JSON.stringify(finalResultPackage));
+
+      router.push('/results');
+    } catch (err) {
+      logError(err);
+      setError(getUserFriendlyError(err));
+      setIsCalculating(false);
+    }
+  }, [router]);
+
+  const handleSendMessage = useCallback(async (userText) => {
     if (isLoading || isCalculating) return;
 
     setError(null);
     setIsLoading(true);
 
-    // 1. Add user message and assistant response placeholder to history in one shot
     const userMsg = { role: 'user', content: userText };
     const assistantMsgPlaceholder = { role: 'assistant', content: '' };
     const historyBeforeResponse = [...messagesRef.current, userMsg];
@@ -95,12 +121,10 @@ export default function ChatPage() {
     const currentStep = stepRef.current;
     let hasDataReceived = false;
 
-    // 2. Request SSE stream
     await sendChatMessage(
       historyBeforeResponse,
       currentStep,
       (chunk) => {
-        // Handle chunk
         setMessages((prev) => {
           if (prev.length === 0) return prev;
           const next = [...prev];
@@ -112,9 +136,8 @@ export default function ChatPage() {
           return next;
         });
       },
-      (s) => setStep(s), // onStep
+      (s) => setStep(s),
       (extractedData) => {
-        // Captures final structured data from backend on step 5
         extractedDataRef.current = extractedData;
         hasDataReceived = true;
       },
@@ -126,102 +149,37 @@ export default function ChatPage() {
 
     setIsLoading(false);
 
-    // 4. Handle progression or calculation
     if (hasDataReceived) {
       await processCarbonProfile();
     }
-  };
-
-  const processCarbonProfile = async () => {
-    setIsCalculating(true);
-    setError(null);
-
-    try {
-      const extracted = extractedDataRef.current;
-      if (!extracted) {
-        throw new Error("We couldn't extract your carbon data from the conversation. Please try again.");
-      }
-
-      // First run the deterministic python calculator
-      const calcResult = await calculateFootprint(extracted);
-      
-      // Then run the contextualization agent (analogies + nudges) in parallel
-      const contextResult = await contextualizeFootprint(calcResult, extracted);
-
-      // Save complete package to local storage
-      const finalResultPackage = {
-        input: extracted,
-        calculation: calcResult,
-        context: contextResult,
-        timestamp: Date.now()
-      };
-      
-      localStorage.setItem('ecomirror_results', JSON.stringify(finalResultPackage));
-      
-      // Navigate to results page
-      router.push('/results');
-    } catch (err) {
-      logError(err);
-      setError(getUserFriendlyError(err));
-      setIsCalculating(false);
-    }
-  };
+  }, [isLoading, isCalculating, processCarbonProfile]);
 
   return (
     <main className="relative h-screen flex flex-col overflow-hidden" style={{ background: 'var(--background)' }}>
 
       {/* Header */}
-      <header
-        className="w-full z-10 flex-shrink-0"
-        style={{
-          background: 'var(--nav-bg)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid var(--border-subtle)',
-          boxShadow: 'var(--shadow-1)',
-        }}
-      >
-        <div className="w-full max-w-3xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/')}>
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #1e8e3e, #34a853)' }}
-            >
-              <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707.707M12 5a7 7 0 100 14 7 7 0 000-14z" />
-              </svg>
-            </div>
-            <span className="text-base font-extrabold" style={{ color: 'var(--foreground)' }}>
-              Eco<span style={{ color: '#1e8e3e' }}>Mirror</span>
-            </span>
+      <AppHeader>
+        {/* Step Progress (Material linear) */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <div
+                key={s}
+                className="transition-all duration-300"
+                style={{
+                  width: s === step ? '20px' : '8px',
+                  height: '8px',
+                  borderRadius: '100px',
+                  background: s < step ? '#34a853' : s === step ? '#1e8e3e' : 'var(--surface-variant)',
+                }}
+              />
+            ))}
           </div>
-
-          {/* Navbar right: toggle + step progress */}
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            {/* Step Progress (Material linear) */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <div
-                    key={s}
-                    className="transition-all duration-300"
-                    style={{
-                      width: s === step ? '20px' : '8px',
-                      height: '8px',
-                      borderRadius: '100px',
-                      background: s < step ? '#34a853' : s === step ? '#1e8e3e' : 'var(--surface-variant)',
-                    }}
-                  />
-                ))}
-              </div>
-              <span className="text-xs font-semibold" style={{ color: 'var(--foreground-muted)' }}>
-                {step}/5
-              </span>
-            </div>
-          </div>
+          <span className="text-xs font-semibold" style={{ color: 'var(--foreground-muted)' }}>
+            {step}/5
+          </span>
         </div>
-      </header>
+      </AppHeader>
 
       {/* Main Content Area */}
       <div className="flex-1 w-full flex flex-col items-center justify-center px-4 md:px-6 py-5 min-h-0">
@@ -233,6 +191,9 @@ export default function ChatPage() {
               border: '1px solid var(--border-subtle)',
               boxShadow: 'var(--shadow-2)',
             }}
+            role="status"
+            aria-live="polite"
+            aria-label="Calculating your carbon footprint"
           >
             <div className="relative w-16 h-16 mb-5">
               <div

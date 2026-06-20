@@ -187,3 +187,34 @@ body {
   transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
 }
 .md-card:hover .stat-accent-bar { width: 100%; }
+
+/* ── Hover utility classes ── */
+.btn-hover-dark {
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+.btn-hover-dark:hover {
+  background: #1a7a36 !important;
+}
+.btn-hover-linkedin {
+  transition: background 0.2s;
+}
+.btn-hover-linkedin:hover {
+  background: #004182 !important;
+}
+.btn-hover-surface {
+  transition: background 0.2s, color 0.2s;
+}
+.btn-hover-surface:hover {
+  background: var(--border-subtle) !important;
+  color: var(--foreground) !important;
+}
+.input-focus-ring:focus {
+  background: var(--surface) !important;
+  border: 1px solid #1e8e3e !important;
+  box-shadow: 0 0 0 2px rgba(30,142,62,0.12) !important;
+}
+.input-focus-ring:not(:focus) {
+  background: var(--surface-variant);
+  border: 1px solid transparent;
+  box-shadow: none;
+}

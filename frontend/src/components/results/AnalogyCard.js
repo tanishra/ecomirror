@@ -1,7 +1,8 @@
 'use client';
 
-export default function AnalogyCard({ analogies }) {
-  // Helper to map keyword to a matching emoji icon
+import React from 'react';
+
+const AnalogyCard = React.memo(function AnalogyCard({ analogies }) {
   const getAnalogyIcon = (text) => {
     const lower = text.toLowerCase();
     if (lower.includes('tree') || lower.includes('offset')) return '🌳';
@@ -47,4 +48,6 @@ export default function AnalogyCard({ analogies }) {
       </div>
     </div>
   );
-}
+});
+
+export default AnalogyCard;

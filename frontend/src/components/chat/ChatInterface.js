@@ -1,26 +1,26 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 
-export default function ChatInterface({ 
-  messages, 
-  onSendMessage, 
-  isLoading, 
-  error 
+export default function ChatInterface({
+  messages,
+  onSendMessage,
+  isLoading,
+  error
 }) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isLoading]);
+  }, [messages, isLoading, scrollToBottom]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -28,12 +28,12 @@ export default function ChatInterface({
     }
   }, [isLoading]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = useCallback((e) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
     onSendMessage(input.trim());
     setInput('');
-  };
+  }, [input, isLoading, onSendMessage]);
 
   return (
     <div
@@ -70,7 +70,7 @@ export default function ChatInterface({
           className="hidden sm:block text-xs font-semibold px-3 py-1 rounded-pill"
           style={{ background: 'var(--green-surface)', color: '#1e8e3e', border: '1px solid var(--green-border)' }}
         >
-          Powered by Gemini 
+          Powered by Gemini
         </span>
       </div>
 
@@ -113,7 +113,7 @@ export default function ChatInterface({
           onChange={(e) => setInput(e.target.value)}
           disabled={isLoading}
           placeholder={isLoading ? 'AI is thinking...' : 'Type your answer...'}
-          className="flex-1 rounded-pill px-5 py-3 text-sm focus:outline-none transition-all duration-200"
+          className="flex-1 rounded-pill px-5 py-3 text-sm focus:outline-none transition-all duration-200 input-focus-ring"
           aria-label="Type your answer"
           autoComplete="off"
           style={{
@@ -121,8 +121,6 @@ export default function ChatInterface({
             border: '1px solid transparent',
             color: 'var(--foreground)',
           }}
-          onFocus={(e) => { e.target.style.background = 'var(--surface)'; e.target.style.border = '1px solid #1e8e3e'; e.target.style.boxShadow = '0 0 0 2px rgba(30,142,62,0.12)'; }}
-          onBlur={(e) => { e.target.style.background = 'var(--surface-variant)'; e.target.style.border = '1px solid transparent'; e.target.style.boxShadow = 'none'; }}
         />
         <button
           type="submit"

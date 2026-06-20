@@ -1,8 +1,9 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 
-export default function Hero() {
+const Hero = React.memo(function Hero() {
   return (
     <section className="relative w-full flex flex-col items-center justify-center text-center px-5 py-20 md:py-28 overflow-hidden flex-1">
       {/* Subtle background gradient blobs */}
@@ -114,4 +115,6 @@ export default function Hero() {
       </div>
     </section>
   );
-}
+});
+
+export default Hero;

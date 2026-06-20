@@ -1,4 +1,6 @@
-export default function TypingIndicator() {
+import React from 'react';
+
+const TypingIndicator = React.memo(function TypingIndicator() {
   return (
     <div className="flex justify-start mb-4 animate-fade-in-up">
       <div
@@ -18,4 +20,6 @@ export default function TypingIndicator() {
       </div>
     </div>
   );
-}
+});
+
+export default TypingIndicator;

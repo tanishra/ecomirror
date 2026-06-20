@@ -1,37 +1,34 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 
-export default function ComparisonBar({ userTons, vsIndia, vsGlobal }) {
+const ComparisonBar = React.memo(function ComparisonBar({ userTons, vsIndia, vsGlobal }) {
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
-    // Trigger width animations on mount
     const timer = setTimeout(() => setAnimate(true), 100);
     return () => clearTimeout(timer);
   }, []);
 
-  const indiaAvg = 2.0;  // IEA 2022
-  const globalAvg = 4.7; // IEA 2022
+  const indiaAvg = 2.0;
+  const globalAvg = 4.7;
 
-  // Compute maximum for bar percentage scaling (max out at 15 tons to keep layout neat)
-  const maxTonsVal = Math.max(userTons, indiaAvg, globalAvg, 6);
-  const getWidthPercent = (val) => {
+  const maxTonsVal = useMemo(() => Math.max(userTons, indiaAvg, globalAvg, 6), [userTons]);
+  const getWidthPercent = useCallback((val) => {
     return `${(val / maxTonsVal) * 100}%`;
-  };
+  }, [maxTonsVal]);
 
-  // Determine user bar color based on footprint size
-  const getUserBarColor = (val) => {
+  const getUserBarColor = useCallback((val) => {
     if (val <= 2.5) return 'linear-gradient(90deg, #1e8e3e, #34a853)';
     if (val <= 4.7) return 'linear-gradient(90deg, #f29900, #fbbc04)';
     return 'linear-gradient(90deg, #d93025, #ea4335)';
-  };
+  }, []);
 
-  const bars = [
+  const bars = useMemo(() => [
     { label: 'Your Footprint', value: userTons, color: getUserBarColor(userTons), bold: true },
     { label: 'India Average', value: indiaAvg, color: '#34a853', bold: false },
     { label: 'Global Average', value: globalAvg, color: '#1a73e8', bold: false },
-  ];
+  ], [userTons, getUserBarColor]);
 
   return (
     <div
@@ -92,4 +89,6 @@ export default function ComparisonBar({ userTons, vsIndia, vsGlobal }) {
       </div>
     </div>
   );
-}
+});
+
+export default ComparisonBar;

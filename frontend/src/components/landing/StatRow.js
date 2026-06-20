@@ -1,6 +1,8 @@
 'use client';
 
-export default function StatRow() {
+import React from 'react';
+
+const StatRow = React.memo(function StatRow() {
   const stats = [
     {
       label: "Average Indian",
@@ -123,4 +125,6 @@ export default function StatRow() {
       </div>
     </section>
   );
-}
+});
+
+export default StatRow;

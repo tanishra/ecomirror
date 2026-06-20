@@ -1,6 +1,7 @@
 import Hero from '@/components/landing/Hero';
 import StatRow from '@/components/landing/StatRow';
 import ThemeToggle from '@/components/ui/ThemeToggle';
+import EcoMirrorLogo, { EcoMirrorBrand } from '@/components/ui/EcoMirrorLogo';
 import Link from 'next/link';
 
 export default function Home() {
@@ -29,14 +30,11 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707.707M12 5a7 7 0 100 14 7 7 0 000-14z" />
               </svg>
             </div>
-            <span className="text-lg font-extrabold tracking-tight" style={{ color: 'var(--foreground)' }}>
-              Eco<span style={{ color: '#1e8e3e' }}>Mirror</span>
-            </span>
+            <EcoMirrorBrand size="large" />
           </Link>
 
           {/* Right Side */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Theme Toggle */}
             <ThemeToggle />
 
             {/* GitHub Icon */}

@@ -1,14 +1,14 @@
 'use client';
 
-export default function MessageBubble({ message }) {
+import React, { useMemo } from 'react';
+
+const MessageBubble = React.memo(function MessageBubble({ message }) {
   const isUser = message.role === 'user';
-  
-  // Strips any <data> tag and content inside it from the chat UI
-  const displayContent = message.content.split('<data>')[0].trim();
+
+  const displayContent = useMemo(() => message.content.split('<data>')[0].trim(), [message.content]);
 
   if (!displayContent) return null;
 
-  // Safe React-level Markdown parser for bold and italic text
   const renderFormattedText = (text) => {
     if (!text.includes('**') && !text.includes('*')) {
       return text;
@@ -16,7 +16,6 @@ export default function MessageBubble({ message }) {
 
     const parts = text.split('**');
     return parts.map((part, index) => {
-      // Bold sections (odd indices)
       if (index % 2 === 1) {
         return (
           <strong key={index} className="font-extrabold" style={{ color: isUser ? '#a8d5b5' : '#1e8e3e' }}>
@@ -24,8 +23,7 @@ export default function MessageBubble({ message }) {
           </strong>
         );
       }
-      
-      // Non-bold sections: check for italics
+
       if (part.includes('*')) {
         const subParts = part.split('*');
         return subParts.map((subPart, subIndex) => {
@@ -69,4 +67,6 @@ export default function MessageBubble({ message }) {
       </div>
     </div>
   );
-}
+});
+
+export default MessageBubble;

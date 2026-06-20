@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
-import ThemeToggle from '@/components/ui/ThemeToggle';
+import AppHeader from '@/components/ui/AppHeader';
 import ScoreCard from '@/components/results/ScoreCard';
 import ComparisonBar from '@/components/results/ComparisonBar';
 import AnalogyCard from '@/components/results/AnalogyCard';
 import NudgeCard from '@/components/results/NudgeCard';
 import ShareButton from '@/components/results/ShareButton';
+import { useEffect, useState } from 'react';
 
 export default function ResultsPage() {
   const router = useRouter();
@@ -29,6 +30,11 @@ export default function ResultsPage() {
     }
   }, [router]);
 
+  const handleRestart = useCallback(() => {
+    localStorage.removeItem('ecomirror_results');
+    router.push('/');
+  }, [router]);
+
   // Skeleton loading state
   if (!mounted || !data) {
     return (
@@ -41,7 +47,7 @@ export default function ResultsPage() {
           </div>
         </div>
         {/* Content skeletons */}
-        <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-5">
+        <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-5" role="status" aria-live="polite" aria-label="Loading results">
           <div className="skeleton h-24 w-full rounded-xl2" />
           <div className="skeleton h-56 w-full rounded-xl2" />
           <div className="skeleton h-40 w-full rounded-xl2" />
@@ -57,54 +63,22 @@ export default function ResultsPage() {
   const totalCo2 = calculation.total_co2_kg_per_year;
   const analogies = context.analogies;
   const nudges = context.nudges;
-  
-  // Extract top action for LinkedIn Share
-  const topAction = nudges && nudges[0] ? nudges[0].action : "Optimizing daily commuting habits";
 
-  const handleRestart = () => {
-    localStorage.removeItem('ecomirror_results');
-    router.push('/');
-  };
+  const topAction = nudges && nudges[0] ? nudges[0].action : "Optimizing daily commuting habits";
 
   return (
     <main className="w-full min-h-screen overflow-y-auto" style={{ background: 'var(--background)' }}>
 
       {/* Sticky Header */}
-      <header
-        className="w-full sticky top-0 z-30"
-        style={{
-          background: 'var(--nav-bg)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid var(--border-subtle)',
-          boxShadow: 'var(--shadow-1)',
-        }}
-      >
-        <div className="max-w-3xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/')}>
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #1e8e3e, #34a853)' }}
-            >
-              <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707.707M12 5a7 7 0 100 14 7 7 0 000-14z" />
-              </svg>
-            </div>
-            <span className="text-base font-extrabold" style={{ color: 'var(--foreground)' }}>
-              Eco<span style={{ color: '#1e8e3e' }}>Mirror</span>
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <button
-              onClick={handleRestart}
-              className="text-xs font-semibold px-4 py-1.5 rounded-pill transition-all duration-200"
-              style={{ background: 'var(--surface-variant)', color: 'var(--foreground-muted)', border: '1px solid var(--border-subtle)' }}
-            >
-              Start Over
-            </button>
-          </div>
-        </div>
-      </header>
+      <AppHeader>
+        <button
+          onClick={handleRestart}
+          className="text-xs font-semibold px-4 py-1.5 rounded-pill transition-all duration-200"
+          style={{ background: 'var(--surface-variant)', color: 'var(--foreground-muted)', border: '1px solid var(--border-subtle)' }}
+        >
+          Start Over
+        </button>
+      </AppHeader>
 
       {/* Centered Container */}
       <div className="w-full max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-5">
@@ -131,10 +105,8 @@ export default function ResultsPage() {
           </div>
           <button
             onClick={() => router.push('/results/biosphere')}
-            className="group w-full md:w-auto whitespace-nowrap flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm transition-all duration-200 active:scale-95"
+            className="group w-full md:w-auto whitespace-nowrap flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm transition-all duration-200 active:scale-95 btn-hover-dark"
             style={{ background: '#1e8e3e', color: '#fff', boxShadow: '0 1px 3px rgba(30,142,62,0.3)' }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#1a7a36'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#1e8e3e'}
           >
             Enter 3D Biosphere
             <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

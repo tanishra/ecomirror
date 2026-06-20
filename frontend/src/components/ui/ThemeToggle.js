@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
-export default function ThemeToggle() {
+const ThemeToggle = React.memo(function ThemeToggle() {
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
@@ -12,12 +12,12 @@ export default function ThemeToggle() {
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
   }, []);
 
-  const toggle = () => {
+  const toggle = useCallback(() => {
     const next = !dark;
     setDark(next);
     document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light');
     localStorage.setItem('ecomirror_theme', next ? 'dark' : 'light');
-  };
+  }, [dark]);
 
   return (
     <button
@@ -50,4 +50,6 @@ export default function ThemeToggle() {
       )}
     </button>
   );
-}
+});
+
+export default ThemeToggle;
